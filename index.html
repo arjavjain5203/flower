@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Our Garden</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121315;
+            /* Deep, dark charcoal */
+            overflow: hidden;
+            font-family: "Playfair Display", "Georgia", serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            /* Prevents mobile scrolling and zooming */
+        }
+
+        #instruction {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            font-style: italic;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 1s ease;
+            z-index: 100;
+        }
+
+        .layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .stem-path {
+            fill: none;
+            stroke: #164220;
+            /* Deep forest green */
+            stroke-width: 4;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.2s ease-in-out;
+        }
+
+        .leaf {
+            fill: #164220;
+            opacity: 0;
+            transform-origin: 0 0;
+            transition: opacity 0.3s ease-out, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .thorn {
+            fill: #0c2612;
+            opacity: 0;
+            transform-origin: 0 0;
+            transition: opacity 0.2s ease-out, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .rose-head {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 8px 16px rgba(180, 0, 30, 0.5));
+            width: 90px;
+            height: 90px;
+            opacity: 1;
+            transition: opacity 0.8s ease;
+        }
+
+        .rose-head svg {
+            overflow: visible;
+        }
+
+        .petal {
+            transform-origin: center;
+            transform: scale(0);
+            transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Successive delay to create a booming petal sequence */
+        .rose-head.bloomed .petal-1 {
+            transform: scale(1);
+            transition-delay: 0s;
+        }
+
+        .rose-head.bloomed .petal-2 {
+            transform: scale(1);
+            transition-delay: 0.15s;
+        }
+
+        .rose-head.bloomed .petal-3 {
+            transform: scale(1);
+            transition-delay: 0.3s;
+        }
+
+        .rose-head.bloomed .petal-4 {
+            transform: scale(1);
+            transition-delay: 0.45s;
+        }
+
+        /* Varying shades of crimson and deep red */
+        .petal-1 {
+            fill: var(--c1, #4a0000);
+        }
+
+        .petal-2 {
+            fill: var(--c2, #7a0010);
+        }
+
+        .petal-3 {
+            fill: var(--c3, #b80f0a);
+        }
+
+        .petal-4 {
+            fill: var(--c4, #e61a25);
+        }
+
+        .fade-out {
+            opacity: 0 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="instruction">Tap to plant</div>
+    <svg class="layer" id="garden-svg"></svg>
+    <div class="layer" id="garden-html"></div>
+
+    <script>
+        const svgLayer = document.getElementById('garden-svg');
+        const htmlLayer = document.getElementById('garden-html');
+        const instruction = document.getElementById('instruction');
+
+        let roseCount = 0;
+        const maxRoses = 15;
+        const roses = [];
+
+        function createRoseSVG() {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '-50 -50 100 100');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+            svg.style.overflow = 'visible';
+
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('transform', `rotate(${Math.random() * 360})`);
+
+            const petals = [
+                { class: 'petal petal-1', d: 'M0,-10 C25,-45 45,-25 10,0 C45,25 25,45 0,10 C-25,45 -45,25 -10,0 C-45,-25 -25,-45 0,-10 Z', transform: '' },
+                { class: 'petal petal-2', d: 'M0,-8 C20,-35 35,-20 8,0 C35,20 20,35 0,8 C-20,35 -35,20 -8,0 C-35,-20 -20,-35 0,-8 Z', transform: 'rotate(45)' },
+                { class: 'petal petal-3', d: 'M0,-6 C15,-25 25,-15 6,0 C25,15 15,25 0,6 C-15,25 -25,15 -6,0 C-25,-15 -15,-25 0,-6 Z', transform: 'rotate(15)' },
+                { class: 'petal petal-4', d: 'M0,-4 C8,-15 15,-8 4,0 C15,8 8,15 0,4 C-8,15 -15,8 -4,0 C-15,-8 -8,-15 0,-4 Z', transform: 'rotate(60)' }
+            ];
+
+            petals.forEach(p => {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('class', p.class);
+                path.setAttribute('d', p.d);
+                if (p.transform) path.setAttribute('transform', p.transform);
+                g.appendChild(path);
+            });
+
+            svg.appendChild(g);
+            return svg;
+        }
+
+        function createRose(x, y) {
+            // Hide instruction text gently on first tap
+            if (roseCount === 0) {
+                instruction.style.opacity = '0';
+            }
+
+            const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            svgContainer.style.transition = 'opacity 1.5s ease-out';
+            svgLayer.appendChild(svgContainer);
+
+            const startX = x + (Math.random() * 80 - 40);
+            const startY = window.innerHeight + 20;
+
+            const dx = x - startX;
+            const dy = y - startY;
+
+            // S-curve mathematics 
+            const sCurveIntensity = 40 + Math.random() * 60;
+            const sCurveDir = Math.random() > 0.5 ? 1 : -1;
+
+            const cx1 = startX + dx * 0.2 + sCurveIntensity * sCurveDir;
+            const cy1 = startY + dy * 0.3;
+
+            const cx2 = startX + dx * 0.8 - sCurveIntensity * sCurveDir;
+            const cy2 = startY + dy * 0.7;
+
+            const stemPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const d = `M ${startX} ${startY} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x} ${y}`;
+            stemPath.setAttribute('d', d);
+            stemPath.setAttribute('class', 'stem-path');
+            svgContainer.appendChild(stemPath);
+
+            // Dasharray trick for path growth animation over time
+            const length = stemPath.getTotalLength();
+            stemPath.style.strokeDasharray = length;
+            stemPath.style.strokeDashoffset = length;
+
+            // Force layout calculation
+            stemPath.getBoundingClientRect();
+            stemPath.style.strokeDashoffset = '0';
+
+            const numLeaves = 2 + Math.floor(Math.random() * 2);
+            const numThorns = 2 + Math.floor(Math.random() * 3);
+            const ornaments = [];
+
+            function addOrnament(isLeaf) {
+                // Distribute somewhere along the path avoiding exact ends
+                const ptProgress = 0.15 + Math.random() * 0.7;
+                const pt = stemPath.getPointAtLength(length * ptProgress);
+
+                // Compute tangent to orient the leaves and thorns outwards
+                const ptMinus = stemPath.getPointAtLength(Math.max(0, length * ptProgress - 1));
+                const ptPlus = stemPath.getPointAtLength(Math.min(length, length * ptProgress + 1));
+                const angle = Math.atan2(ptPlus.y - ptMinus.y, ptPlus.x - ptMinus.x) * (180 / Math.PI);
+
+                const side = Math.random() > 0.5 ? 1 : -1;
+                const normAngle = angle + (side * (60 + Math.random() * 30));
+
+                const element = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const scaleVal = isLeaf ? (0.8 + Math.random() * 0.4) : (0.5 + Math.random() * 0.5);
+
+                if (isLeaf) {
+                    element.setAttribute('d', `M 0 0 C 8 -12, 18 -10, 26 -2 C 18 6, 8 8, 0 0 Z`);
+                    element.setAttribute('class', 'leaf');
+                } else {
+                    element.setAttribute('d', `M 0 -3 L 8 0 L 0 3 Z`);
+                    element.setAttribute('class', 'thorn');
+                }
+
+                element.style.transform = `translate(${pt.x}px, ${pt.y}px) rotate(${normAngle}deg) scale(0)`;
+                svgContainer.appendChild(element);
+
+                ornaments.push({
+                    el: element,
+                    progress: ptProgress,
+                    targetTransform: `translate(${pt.x}px, ${pt.y}px) rotate(${normAngle}deg) scale(${scaleVal})`
+                });
+            }
+
+            for (let i = 0; i < numLeaves; i++) addOrnament(true);
+            for (let i = 0; i < numThorns; i++) addOrnament(false);
+
+            // Animate the ornaments precisely as the path grows
+            let startTime = null;
+            function animateStem(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                const progress = elapsed / 1200; // Total stems take 1.2s
+
+                ornaments.forEach(orn => {
+                    if (progress > orn.progress && orn.el.style.opacity === '0') {
+                        orn.el.style.opacity = '1';
+                        orn.el.style.transform = orn.targetTransform;
+                    }
+                });
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateStem);
+                }
+            }
+            requestAnimationFrame(animateStem);
+
+            // Add actual HTML rose after configuring SVG 
+            const roseDiv = document.createElement('div');
+            roseDiv.className = 'rose-head';
+            roseDiv.style.left = `${x}px`;
+            roseDiv.style.top = `${y}px`;
+
+            // Generate random hue for dynamic flower colors
+            const hue = Math.floor(Math.random() * 360);
+            roseDiv.style.setProperty('--c1', `hsl(${hue}, 100%, 15%)`);
+            roseDiv.style.setProperty('--c2', `hsl(${hue}, 100%, 25%)`);
+            roseDiv.style.setProperty('--c3', `hsl(${hue}, 85%, 38%)`);
+            roseDiv.style.setProperty('--c4', `hsl(${hue}, 80%, 50%)`);
+
+            roseDiv.appendChild(createRoseSVG());
+            htmlLayer.appendChild(roseDiv);
+
+            // Trigger the physics-based bloom exactly when the stem finishes
+            setTimeout(() => {
+                roseDiv.classList.add('bloomed');
+            }, 1100);
+
+            // Keep track of roses 
+            const roseObj = { svg: svgContainer, html: roseDiv };
+            roses.push(roseObj);
+            roseCount++;
+
+            // Manage limits elegantly
+            if (roses.length > maxRoses) {
+                const oldRose = roses.shift();
+                oldRose.svg.classList.add('fade-out');
+                oldRose.html.classList.add('fade-out');
+                setTimeout(() => {
+                    oldRose.svg.remove();
+                    oldRose.html.remove();
+                }, 1500); // Wait for transition out
+            }
+        }
+
+        function handleInteraction(e) {
+            if (e.target.tagName && e.target.tagName.toLowerCase() === 'a') return;
+            e.preventDefault();
+
+            let x, y;
+            if (e.clientX !== undefined) {
+                x = e.clientX;
+                y = e.clientY;
+            } else if (e.touches && e.touches.length > 0) {
+                x = e.touches[0].clientX;
+                y = e.touches[0].clientY;
+            }
+
+            if (x !== undefined && y !== undefined) {
+                createRose(x, y);
+            }
+        }
+
+        // Attach universally applicable pointerdown if supported
+        if (window.PointerEvent) {
+            window.addEventListener('pointerdown', handleInteraction, { passive: false });
+        } else {
+            window.addEventListener('mousedown', handleInteraction, { passive: false });
+            window.addEventListener('touchstart', handleInteraction, { passive: false });
+        }
+
+    </script>
+</body>
+
+</html>
