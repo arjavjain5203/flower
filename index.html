@@ -57,7 +57,6 @@
         }
 
         .leaf {
-            fill: #164220;
             opacity: 0;
             transform-origin: 0 0;
             transition: opacity 0.3s ease-out, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -218,8 +217,8 @@
             stemPath.getBoundingClientRect();
             stemPath.style.strokeDashoffset = '0';
 
-            const numLeaves = 2 + Math.floor(Math.random() * 2);
-            const numThorns = 2 + Math.floor(Math.random() * 3);
+            const numLeaves = 1 + Math.floor(Math.random() * 6); // 1 to 6 leaves
+            const numThorns = Math.floor(Math.random() * 5); // 0 to 4 thorns
             const ornaments = [];
 
             function addOrnament(isLeaf) {
@@ -241,6 +240,11 @@
                 if (isLeaf) {
                     element.setAttribute('d', `M 0 0 C 8 -12, 18 -10, 26 -2 C 18 6, 8 8, 0 0 Z`);
                     element.setAttribute('class', 'leaf');
+                    // Randomize leaf color slightly (hues around 110-140, varying lightness)
+                    const h = 110 + Math.random() * 30;
+                    const s = 40 + Math.random() * 30;
+                    const l = 15 + Math.random() * 20;
+                    element.style.fill = `hsl(${h}, ${s}%, ${l}%)`;
                 } else {
                     element.setAttribute('d', `M 0 -3 L 8 0 L 0 3 Z`);
                     element.setAttribute('class', 'thorn');
